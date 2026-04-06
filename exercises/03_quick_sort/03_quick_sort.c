@@ -13,8 +13,20 @@ typedef struct {
 Student students[MAX_STUDENTS];
 
 void quick_sort(int left, int right) {
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+    if (left >= right) return;
+    Student pivot_stu = students[left];
+    int pivot = pivot_stu.score;
+    int i = left;
+    int j = right;
+    while (i < j) {
+        while (i < j && students[j].score <= pivot) j--;
+        students[i] = students[j];
+        while (i < j && students[i].score >= pivot) i++;
+        students[j] = students[i];
+    }
+    students[i] = pivot_stu;
+    quick_sort(left, i - 1);
+    quick_sort(i + 1, right);
 }
 
 int main(void) {

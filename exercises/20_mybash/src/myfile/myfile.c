@@ -31,15 +31,31 @@ void print_elf_type(uint16_t e_type) {
 
 int __cmd_myfile(const char* filename) {
     char filepath[256];
-    int fd;
     Elf64_Ehdr ehdr;
 
-    strcpy(filepath, filename);
+    strncpy(filepath, filename, sizeof(filepath) - 1);
+    filepath[sizeof(filepath) - 1] = '\0';
     fflush(stdout);
     printf("filepath: %s\n", filepath);
 
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+    int fd = open(filepath, O_RDONLY);
+    if (fd < 0) {
+      perror("myfile");
+      return 1;
+    }
+
+    ssize_t n = read(fd, &ehdr, sizeof(ehdr));
+    if (n != (ssize_t)sizeof(ehdr)) {
+      fprintf(stderr, "myfile: failed to read ELF header\n");
+      close(fd);
+      return 1;
+    }
+
+    if (memcmp(ehdr.e_ident, ELFMAG, SELFMAG) != 0) {
+      fprintf(stderr, "myfile: not an ELF file\n");
+      close(fd);
+      return 1;
+    }
 
     print_elf_type(ehdr.e_type);
     close(fd);

@@ -40,8 +40,37 @@ void processFile(const char *filename) {
     printf("=== 处理数据来自: %s ===\n", filename);
 
     switch (choice) {
-        // TODO: 在这里添加你的代码
-        // I AM NOT DONE
+    case 1: {
+	    int arr[20];
+	    for (int i = 0; i < n; i++) {
+		    if (fscanf(fin, "%d", &arr[i]) != 1) {
+			    printf("错误: 读取整数失败\n");
+			    fclose(fin);
+			    return;
+		    }
+	    }
+	    sort(arr, (size_t)n, sizeof(int), compareInt);
+	    for (int i = 0; i < n; i++)
+		    printf("%d%c", arr[i], (i + 1 < n) ? ' ' : '\n');
+	    break;
+    }
+    case 2: {
+	    float arr[20];
+	    for (int i = 0; i < n; i++) {
+		    if (fscanf(fin, "%f", &arr[i]) != 1) {
+			    printf("错误: 读取浮点数失败\n");
+			    fclose(fin);
+			    return;
+		    }
+	    }
+	    sort(arr, (size_t)n, sizeof(float), compareFloat);
+	    for (int i = 0; i < n; i++)
+		    printf("%.2f%c", arr[i], (i + 1 < n) ? ' ' : '\n');
+	    break;
+    }
+    default:
+	    printf("错误: 未知类型 %d\n", choice);
+	    break;
     }
 
     fclose(fin);

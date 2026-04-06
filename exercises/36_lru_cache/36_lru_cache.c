@@ -2,123 +2,232 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*
- * 16 LRU 缓存淘汰算法（哈希表 + 双向链表）
- *  - put(k,v)、get(k) 均为 O(1)
- *  - 容量满时淘汰最久未使用（LRU）的元素
- */
-
 typedef struct LRUNode {
-    int key;
-    int value;
-    struct LRUNode* prev;
-    struct LRUNode* next;
+	int key;
+	int value;
+	struct LRUNode *prev;
+	struct LRUNode *next;
 } LRUNode;
 
 typedef struct HashEntry {
-    int key;
-    LRUNode* node;
-    struct HashEntry* next;
+	int key;
+	LRUNode *node;
+	struct HashEntry *next;
 } HashEntry;
 
 typedef struct {
-    int capacity;
-    int size;
-    LRUNode* head; /* 最近使用（MRU） */
-    LRUNode* tail; /* 最久未使用（LRU） */
-    /* 简单链式哈希表 */
-    size_t bucket_count;
-    HashEntry** buckets;
+	int capacity;
+	int size;
+	LRUNode *head;
+	LRUNode *tail;
+	size_t bucket_count;
+	HashEntry **buckets;
 } LRUCache;
 
-static unsigned hash_int(int key) {
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+static size_t bucket_idx(LRUCache *c, int key)
+{
+	return (size_t)((unsigned)key % (unsigned)c->bucket_count);
 }
 
-static HashEntry* hash_find(LRUCache* c, int key, HashEntry*** pprev_next) {
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+static HashEntry *hash_find(LRUCache *c, int key, HashEntry ***pprev_next)
+{
+	size_t b = bucket_idx(c, key);
+	HashEntry **pp = &c->buckets[b];
+	while (*pp) {
+		if ((*pp)->key == key) {
+			if (pprev_next)
+				*pprev_next = pp;
+			return *pp;
+		}
+		pp = &(*pp)->next;
+	}
+	if (pprev_next)
+		*pprev_next = NULL;
+	return NULL;
 }
 
-static void list_add_to_head(LRUCache* c, LRUNode* node) {
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+static void hash_remove(LRUCache *c, int key)
+{
+	size_t b = bucket_idx(c, key);
+	HashEntry **pp = &c->buckets[b];
+	while (*pp) {
+		if ((*pp)->key == key) {
+			HashEntry *t = *pp;
+			*pp = t->next;
+			free(t);
+			return;
+		}
+		pp = &(*pp)->next;
+	}
 }
 
-static void list_remove(LRUCache* c, LRUNode* node) {
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+static void hash_put(LRUCache *c, int key, LRUNode *node)
+{
+	size_t b = bucket_idx(c, key);
+	HashEntry *e = malloc(sizeof(HashEntry));
+	e->key = key;
+	e->node = node;
+	e->next = c->buckets[b];
+	c->buckets[b] = e;
 }
 
-static void list_move_to_head(LRUCache* c, LRUNode* node) {
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+static void list_add_to_head(LRUCache *c, LRUNode *node)
+{
+	node->prev = NULL;
+	node->next = c->head;
+	if (c->head)
+		c->head->prev = node;
+	else
+		c->tail = node;
+	c->head = node;
 }
 
-static LRUNode* list_pop_tail(LRUCache* c) {
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+static void list_remove(LRUCache *c, LRUNode *node)
+{
+	if (node->prev)
+		node->prev->next = node->next;
+	else
+		c->head = node->next;
+	if (node->next)
+		node->next->prev = node->prev;
+	else
+		c->tail = node->prev;
+	node->prev = node->next = NULL;
 }
 
-/* LRU 接口实现 */
-static LRUCache* lru_create(int capacity) {
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+static void list_move_to_head(LRUCache *c, LRUNode *node)
+{
+	if (c->head == node)
+		return;
+	list_remove(c, node);
+	list_add_to_head(c, node);
 }
 
-static void lru_free(LRUCache* c) {
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+static LRUNode *list_pop_tail(LRUCache *c)
+{
+	if (!c->tail)
+		return NULL;
+	LRUNode *t = c->tail;
+	list_remove(c, t);
+	return t;
 }
 
-static int lru_get(LRUCache* c, int key, int* out_value) {
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+static LRUCache *lru_create(int capacity)
+{
+	LRUCache *c = malloc(sizeof(LRUCache));
+	if (!c)
+		return NULL;
+	c->capacity = capacity;
+	c->size = 0;
+	c->head = c->tail = NULL;
+	c->bucket_count = 1024;
+	c->buckets = calloc(c->bucket_count, sizeof(HashEntry *));
+	if (!c->buckets) {
+		free(c);
+		return NULL;
+	}
+	return c;
 }
 
-static void lru_put(LRUCache* c, int key, int value) {
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+static void lru_free(LRUCache *c)
+{
+	if (!c)
+		return;
+	LRUNode *p = c->head;
+	while (p) {
+		LRUNode *n = p->next;
+		free(p);
+		p = n;
+	}
+	for (size_t i = 0; i < c->bucket_count; i++) {
+		HashEntry *e = c->buckets[i];
+		while (e) {
+			HashEntry *t = e;
+			e = e->next;
+			free(t);
+		}
+	}
+	free(c->buckets);
+	free(c);
 }
 
-/* 打印当前缓存内容（从头到尾） */
-static void lru_print(LRUCache* c) {
-    LRUNode* p = c->head;
-    int first = 1;
-    while (p) {
-        if (!first) printf(", ");
-        first = 0;
-        printf("%d:%d", p->key, p->value);
-        p = p->next;
-    }
-    printf("\n");
+static int lru_get(LRUCache *c, int key, int *out_value)
+{
+	HashEntry *he = hash_find(c, key, NULL);
+	if (!he)
+		return 0;
+	*out_value = he->node->value;
+	list_move_to_head(c, he->node);
+	return 1;
 }
 
-int main(void) {
-    /* 容量 3：put(1,1), put(2,2), put(3,3), put(4,4), get(2), put(5,5) */
-    LRUCache* c = lru_create(3);
-    if (!c) {
-        fprintf(stderr, "创建 LRU 失败\n");
-        return 1;
-    }
+static void lru_put(LRUCache *c, int key, int value)
+{
+	HashEntry *he = hash_find(c, key, NULL);
+	if (he) {
+		he->node->value = value;
+		list_move_to_head(c, he->node);
+		return;
+	}
 
-    lru_put(c, 1, 1); /* 缓存：1 */
-    lru_put(c, 2, 2); /* 缓存：2,1 */
-    lru_put(c, 3, 3); /* 缓存：3,2,1 (满) */
-    lru_put(c, 4, 4); /* 淘汰 LRU(1)，缓存：4,3,2 */
+	if (c->size >= c->capacity) {
+		LRUNode *victim = c->tail;
+		if (!victim)
+			return;
+		int vk = victim->key;
+		list_remove(c, victim);
+		hash_remove(c, vk);
+		victim->key = key;
+		victim->value = value;
+		list_add_to_head(c, victim);
+		hash_put(c, key, victim);
+		return;
+	}
 
-    int val;
-    if (lru_get(c, 2, &val)) {
-        /* 访问 2：缓存：2,4,3 */
-        (void)val; /* 演示无需使用 */
-    }
+	LRUNode *n = malloc(sizeof(LRUNode));
+	n->key = key;
+	n->value = value;
+	n->prev = n->next = NULL;
+	list_add_to_head(c, n);
+	hash_put(c, key, n);
+	c->size++;
+}
 
-    lru_put(c, 5, 5); /* 淘汰 LRU(3)，缓存：5,2,4 */
+static void lru_print(LRUCache *c)
+{
+	LRUNode *p = c->head;
+	int first = 1;
+	while (p) {
+		if (!first)
+			printf(", ");
+		first = 0;
+		printf("%d:%d", p->key, p->value);
+		p = p->next;
+	}
+	printf("\n");
+}
 
-    /* 期望最终键集合：{2,4,5}，顺序无关。此处按最近->最久打印：5:5, 2:2, 4:4 */
-    lru_print(c);
+int main(void)
+{
+	LRUCache *c = lru_create(3);
+	if (!c) {
+		fprintf(stderr, "创建 LRU 失败\n");
+		return 1;
+	}
 
-    lru_free(c);
-    return 0;
+	lru_put(c, 1, 1);
+	lru_put(c, 2, 2);
+	lru_put(c, 3, 3);
+	lru_put(c, 4, 4);
+
+	int val;
+	if (lru_get(c, 2, &val))
+		(void)val;
+
+	lru_put(c, 5, 5);
+
+	lru_print(c);
+
+	lru_free(c);
+	return 0;
 }

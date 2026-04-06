@@ -1,45 +1,44 @@
 #include <stdio.h>
 
-// TODO：定义四则运算规则
-// hint：似乎除数有一些特殊情况，需要处理
+typedef int (*op_fn)(int, int);
 
-// I AM NOT DONE
-int add(int a, int b) {  }
-int subtract(int a, int b) {  }
-int multiply(int a, int b) {  }
-int divide(int a, int b) {  }
+static int add(int a, int b) { return a + b; }
+static int subtract(int a, int b) { return a - b; }
+static int multiply(int a, int b) { return a * b; }
+static int divide(int a, int b) { return a / b; }
 
+int main(void)
+{
+	int a, b;
+	char op;
 
+	op_fn operations[] = {add, subtract, multiply, divide};
 
-int main() {
-    int a, b;
-    char op;
+	char operators[] = "+-*/";
 
-    // TODO
-    // hint:这是一个函数指针数组，在这之前应该先定义指针
-    int ()() = {add, subtract, multiply, divide};
+	printf("输入两个整数和一个运算符 (+, -, *, /): ");
+	scanf("%d %d %c", &a, &b, &op);
 
-    char operators[] = "+-*/";
+	int index = -1;
+	for (int i = 0; i < 4; i++) {
+		if (op == operators[i]) {
+			index = i;
+			break;
+		}
+	}
 
-    printf("输入两个整数和一个运算符 (+, -, *, /): ");
-    scanf("%d %d %c", &a, &b, &op);
+	if (index == -1) {
+		printf("无效的运算符\n");
+		return 1;
+	}
 
-    // 查找对应的运算符索引
-    int index = -1;
-    for (int i = 0; i < 4; i++) {
-        if (op == operators[i]) {
-            index = i;
-            break;
-        }
-    }
+	if (index == 3 && b == 0) {
+		printf("除零错误\n");
+		return 0;
+	}
 
-    if (index == -1) {
-        printf("无效的运算符\n");
-        return 1;
-    }
+	int result = operations[index](a, b);
+	printf("%d %c %d = %d\n", a, op, b, result);
 
-    int result = operations[index](a, b);
-    printf("%d %c %d = %d\n", a, op, b, result);
-
-    return 0;
+	return 0;
 }

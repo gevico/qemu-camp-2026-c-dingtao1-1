@@ -26,24 +26,53 @@ int main() {
   }
   printf("词典加载完成，共计%ld词条。\n", dict_count);
 
-  FILE* file = fopen("text.txt", "r");
+  FILE *file = fopen("text.txt", "r");
   if (file == NULL) {
-    fprintf(stderr, "无法打开文件 dict.txt。\n");
+    fprintf(stderr, "无法打开文件 text.txt。\n");
     free_hash_table(table);
     return 1;
   }
 
-  char line[256];
+  char line[4096];
   while (fgets(line, sizeof(line), file) != NULL) {
     line[strcspn(line, "\n")] = '\0';
 
     if (strlen(line) == 0) {
-        continue;
+      continue;
     }
 
-    // 使用 strtok 按空格分割单词
-    // TODO: 在这里添加你的代码
-    // I AM NOT DONE
+    char *tok = strtok(line, " \t\r\n");
+    while (tok != NULL) {
+      char w[256];
+      strncpy(w, tok, sizeof(w) - 1);
+      w[sizeof(w) - 1] = '\0';
+      trim(w);
+      to_lowercase(w);
+
+      char *end = w + strlen(w);
+      while (end > w && ispunct((unsigned char)*(end - 1)))
+        *--end = '\0';
+
+      char *start = w;
+      while (*start && ispunct((unsigned char)*start))
+        start++;
+
+      if (*start == '\0') {
+        tok = strtok(NULL, " \t\r\n");
+        continue;
+      }
+
+      if (start != w)
+        memmove(w, start, strlen(start) + 1);
+
+      const char *tr = hash_table_lookup(table, w);
+      if (tr)
+        printf("原文: %s\t翻译: %s\n", w, tr);
+      else
+        printf("原文: %s\t未找到该单词的翻译。\n", w);
+
+      tok = strtok(NULL, " \t\r\n");
+    }
   }
 
   free_hash_table(table);

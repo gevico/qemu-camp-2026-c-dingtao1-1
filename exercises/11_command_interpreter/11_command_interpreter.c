@@ -55,14 +55,23 @@ int main(void)
 // shell_parse 和 execute_command 保持不变
 int shell_parse(char *buf, char *argv[])
 {
-    int argc = 0;
-    int state = 0;
-    // TODO: 在这里添加你的代码，完成命令行解析
-    // 功能：将输入字符串buf按空格分割成多个参数，存入argv数组
-    // 返回：参数个数argc
-    // 提示：使用状态机的方式处理，注意处理字符串结束符
-    // I AM NOT DONE
-    return argc;
+	int argc = 0;
+	char *p = buf;
+
+	while (*p == ' ' || *p == '\t')
+		p++;
+	while (*p != '\0' && argc < MAX_ARGS) {
+		argv[argc++] = p;
+		while (*p != '\0' && *p != ' ' && *p != '\t')
+			p++;
+		if (*p == '\0')
+			break;
+		*p++ = '\0';
+		while (*p == ' ' || *p == '\t')
+			p++;
+	}
+	argv[argc] = NULL;
+	return argc;
 }
 
 void execute_command(int argc, char *argv[])

@@ -63,19 +63,20 @@ void josephus_problem(int n, int k, int m) {
 
     // 依次出列并打印顺序
     for (int out = 0; out < n; ++out) {
+        link victim = current;
+
         if (m == 1) {
-            // m==1 时当前节点直接出列
-            // TODO: 在这里添加你的代码
-            // I AM NOT DONE
+            /* current 即为出列者 */
+        } else {
+            for (int i = 1; i < m; ++i)
+                victim = next_wrap(victim);
         }
 
-        // 数到 m 的那个人出列：从 current 开始走 m-1 步，落在第 m 个节点
-        // TODO: 在这里添加你的代码
-        // I AM NOT DONE
+        printf("%d ", victim->item);
 
-        // 此时 current 指向要出列的人
-        // TODO: 在这里添加你的代码
-        // I AM NOT DONE
+        link next_start = next_wrap(victim);
+        delete(victim);
+        current = next_start;
     }
 
     printf("\n");
